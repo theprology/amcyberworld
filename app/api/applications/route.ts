@@ -80,9 +80,15 @@ export async function POST(request: Request) {
 
     const telegramText = encodeURIComponent(`CIBWAY application ${applicationId}: secure intake completed. Please assign a verified case specialist.`);
     const siteOrigin = new URL(request.url).origin;
+    const verifiedContact = env.TELEGRAM_CONTACT_URL?.startsWith('https://t.me/')
+      ? env.TELEGRAM_CONTACT_URL
+      : null;
+    const telegramUrl = verifiedContact
+      ? `${verifiedContact}${verifiedContact.includes('?') ? '&' : '?'}text=${telegramText}`
+      : `https://t.me/share/url?url=${encodeURIComponent(siteOrigin)}&text=${telegramText}`;
     return Response.json({
       applicationId,
-      telegramUrl: `https://t.me/share/url?url=${encodeURIComponent(siteOrigin)}&text=${telegramText}`,
+      telegramUrl,
     }, { status: 201 });
   } catch (error) {
     console.error('Application submission failed', error);
