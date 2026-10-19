@@ -28,6 +28,14 @@ yarn-error.log*
 
 # local environment
 .env*
+!.env.example
+
+# private application uploads
+/storage/
+/deployment-package/
+/php-package/
+/amcyberworld-cyberpanel.zip
+/amcyberworld-php.zip
 
 # deployment and generated files
 .vercel

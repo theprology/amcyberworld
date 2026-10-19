@@ -13,20 +13,22 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://amcyberworld.com'),
   title: {
-    default: 'CIBWAY | Citizenship by Investment Advisory',
-    template: '%s | CIBWAY',
+    default: 'AMCYBERWORLD | Citizenship by Investment Advisory',
+    template: '%s | AMCYBERWORLD',
   },
   description: 'Compare citizenship by investment programmes and begin a secure, guided eligibility review.',
   openGraph: {
-    title: 'CIBWAY | Citizenship by Investment Advisory',
+    title: 'AMCYBERWORLD | Citizenship by Investment Advisory',
+    url: 'https://amcyberworld.com',
     description: 'Citizenship by investment, handled with clarity.',
     type: 'website',
-    images: [{ url: '/og.png', width: 1200, height: 630, alt: 'CIBWAY citizenship by investment advisory' }],
+    images: [{ url: '/og.png', width: 1200, height: 630, alt: 'AMCYBERWORLD citizenship by investment advisory' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'CIBWAY | Citizenship by Investment Advisory',
+    title: 'AMCYBERWORLD | Citizenship by Investment Advisory',
     description: 'Citizenship by investment, handled with clarity.',
     images: ['/og.png'],
   },

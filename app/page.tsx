@@ -1,5 +1,5 @@
-import CibwayApp from './CibwayApp';
+import AmcyberworldApp from './AmcyberworldApp';
 
 export default function Home() {
-  return <CibwayApp />;
+  return <AmcyberworldApp />;
 }

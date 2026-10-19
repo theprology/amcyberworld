@@ -1,0 +1,19 @@
+Options -Indexes
+RewriteEngine On
+
+# Never expose configuration or private uploaded files.
+RewriteRule ^\.env(?:\..*)?$ - [F,L]
+RewriteRule ^private-storage(?:/|$) - [F,L]
+RewriteRule ^(?:README\.txt|api\.php~)$ - [F,L]
+
+# Keep the existing frontend URLs while PHP handles the API.
+RewriteRule ^api/applications/?$ api.php?route=applications [QSA,L]
+RewriteRule ^api/reviews/?$ api.php?route=reviews [QSA,L]
+RewriteRule ^api/agent/applications/?$ api.php?route=agent/applications [QSA,L]
+RewriteRule ^api/agent/reviews/?$ api.php?route=agent/reviews [QSA,L]
+RewriteRule ^api/agent/proof/?$ api.php?route=agent/proof [QSA,L]
+
+RewriteRule ^agent/?$ agent/index.html [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.html [L]

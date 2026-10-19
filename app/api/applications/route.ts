@@ -1,7 +1,8 @@
-import { env } from 'cloudflare:workers';
-import { createApplicationId, ensureDatabase, textField } from '@/lib/persistence';
+import { getDatabase } from '@/lib/database';
+import { createIntakeReference, ensureDatabase, textField } from '@/lib/persistence';
+import { deletePrivateFile, savePrivateFile } from '@/lib/storage';
 
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 
 const acceptedTypes = new Set(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']);
 const programIds = new Set(['antigua', 'dominica', 'grenada', 'st-kitts', 'st-lucia', 'turkiye']);
@@ -29,25 +30,25 @@ export async function POST(request: Request) {
       return Response.json({ error: 'Privacy consent and document redaction confirmation are required.' }, { status: 400 });
     }
 
-    await ensureDatabase(env.DB);
-    const applicationId = createApplicationId();
+    await ensureDatabase();
+    const db = getDatabase();
+    const intakeReference = createIntakeReference();
+    const pendingApplicationKey = `PENDING-${intakeReference}`;
     const extension = file.name.includes('.') ? file.name.split('.').pop()!.toLowerCase().replace(/[^a-z0-9]/g, '') : 'bin';
-    const fileKey = `applications/${applicationId}/proof.${extension || 'bin'}`;
+    const fileKey = `applications/${intakeReference}/proof.${extension || 'bin'}`;
 
-    await env.FILES.put(fileKey, file.stream(), {
-      httpMetadata: { contentType: file.type },
-      customMetadata: { classification: 'private-proof-of-funds' },
-    });
+    await savePrivateFile(fileKey, file);
 
     try {
-      await env.DB.prepare(`INSERT INTO applications (
-        application_id, program_id, given_name, family_name, email, phone,
+      await db.prepare(`INSERT INTO applications (
+        intake_id, application_id, program_id, given_name, family_name, email, phone,
         nationality, residence_country, other_nationalities, family_size,
         available_funds, timeline, occupation, source_of_funds, compliance_answers,
         proof_file_key, proof_file_name, proof_content_type, proof_size, status, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'submitted', ?)`)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'submitted', ?)`)
         .bind(
-          applicationId,
+          intakeReference,
+          pendingApplicationKey,
           programId,
           textField(form, 'givenName', 80),
           textField(form, 'familyName', 80),
@@ -74,20 +75,21 @@ export async function POST(request: Request) {
         )
         .run();
     } catch (error) {
-      await env.FILES.delete(fileKey);
+      await deletePrivateFile(fileKey);
       throw error;
     }
 
-    const telegramText = encodeURIComponent(`CIBWAY application ${applicationId}: secure intake completed. Please assign a verified case specialist.`);
+    const telegramText = encodeURIComponent(`Hello AMCYBERWORLD Support, my intake reference is ${intakeReference}. Please connect me with a case specialist.`);
     const siteOrigin = new URL(request.url).origin;
-    const verifiedContact = env.TELEGRAM_CONTACT_URL?.startsWith('https://t.me/')
-      ? env.TELEGRAM_CONTACT_URL
+    const telegramContactUrl = process.env.TELEGRAM_CONTACT_URL?.trim();
+    const verifiedContact = telegramContactUrl?.startsWith('https://t.me/')
+      ? telegramContactUrl
       : null;
     const telegramUrl = verifiedContact
-      ? `${verifiedContact}${verifiedContact.includes('?') ? '&' : '?'}text=${telegramText}`
+      ? `${verifiedContact}${verifiedContact.includes('?') ? '&' : '?'}draft_text=${telegramText}`
       : `https://t.me/share/url?url=${encodeURIComponent(siteOrigin)}&text=${telegramText}`;
     return Response.json({
-      applicationId,
+      intakeReference,
       telegramUrl,
     }, { status: 201 });
   } catch (error) {
